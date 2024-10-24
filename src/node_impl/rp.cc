@@ -72,8 +72,14 @@ void RPNode::receive_packet(MACAddress src_mac, std::vector<uint8_t> packet, siz
     }
     else if(ph.type == BROADCAST_NEIGHBOURS_TO_ALL)
     {
-        // Need to iterate over the packet information and figure out the graph and update the adjacency list
-
+        // Need to iterate over the packet information and update the adjacency list
+        std::pair <IPAddress, int> neighbour;
+        for(size_t i = sizeof(ph); i < packet.size(); i += sizeof(neighbour))
+        {
+            memcpy(&neighbour, &packet[i], sizeof(neighbour));
+            adjacency_list[ph.src_ip][neighbour.first] = neighbour.second;
+        }
+        
 
     }
     else
@@ -95,13 +101,36 @@ void RPNode::do_periodic()
      * XXX
      * Implement this function
      */
+
     //  Broadcast to all neighbours, to create neighbour table
+    RPPacketHeader ph(ip, 0, BROADCAST_NEIGHBOURS);
+    std::vector<uint8_t> packet(sizeof(ph));
+    memcpy(&packet[0], &ph, sizeof(ph));
+    broadcast_packet_to_all_neighbors(packet);
     //  add delay
+
+
     //  Blast to all nodes about the neighbours
+    ph.type = BROADCAST_NEIGHBOURS_TO_ALL;
+    std::vector<uint8_t> packet2(sizeof(ph));
+    memcpy(&packet2[0], &ph, sizeof(ph));
+    //memcpy the neighbours to the packet
+    for(auto neighbour : neighbours)
+    {
+        memcpy(&packet2[sizeof(ph)], &neighbour, sizeof(neighbour));
+    }    
+    broadcast_packet_to_all_neighbors(packet2);
     //  add delay
-    //  Update the adjacency list
-    //  Update the distance table
-    //  Update the next hop table
+
+    // Perform Djikstra and update the distance table and the next hop table
+    
+    // Initialize the distance and next hop table
+    for(auto neighbour : neighbours)
+    {
+        distance[neighbour.first] = neighbour.second;
+        next_hop[neighbour.first] = neighbour.first;
+    }
+    
 
 
     assert(false && "Unimplemented");
