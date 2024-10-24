@@ -2,7 +2,7 @@
 #define RP_H
 
 #include "../node.h"
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 
@@ -11,12 +11,11 @@ class RPNode : public Node {
      * XXX
      * Add any fields, helper functions etc here
      */
-
-
+    std::unordered_map<IPAddress, int> neighbours;
+    std::unordered_map<IPAddress, std::unordered_map<IPAddress, int>> adjacency_list;
+    std::unordered_map<IPAddress, int> distance;
+    std::unordered_map<IPAddress, IPAddress> next_hop;
 public:
-    
-    map<IPAddress, int> neighbours;
-    map<IPAddress, map<IPAddress, int>> adjacency_list;
     /*
      * NOTE You may not modify the constructor of this class
      */
