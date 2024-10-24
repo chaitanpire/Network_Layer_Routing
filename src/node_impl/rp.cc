@@ -73,11 +73,13 @@ void RPNode::receive_packet(MACAddress src_mac, std::vector<uint8_t> packet, siz
     else if(ph.type == BROADCAST_NEIGHBOURS_TO_ALL)
     {
         // Need to iterate over the packet information and update the adjacency list
-        std::pair <IPAddress, int> neighbour;
+        IPAddress neighbour;
+        uint8_t distance;
         for(size_t i = sizeof(ph); i < packet.size(); i += sizeof(neighbour))
         {
             memcpy(&neighbour, &packet[i], sizeof(neighbour));
-            adjacency_list[ph.src_ip][neighbour.first] = neighbour.second;
+            memcpy(&distance, &packet[i + sizeof(neighbour)], sizeof(distance));
+            adjacency_list[ph.src_ip][neighbour] = distance;
         }
         
 
@@ -112,12 +114,15 @@ void RPNode::do_periodic()
 
     //  Blast to all nodes about the neighbours
     ph.type = BROADCAST_NEIGHBOURS_TO_ALL;
-    std::vector<uint8_t> packet2(sizeof(ph));
+    std::vector<uint8_t> packet2(sizeof(ph) + neighbours.size() * sizeof(IPAddress) * sizeof(int));
     memcpy(&packet2[0], &ph, sizeof(ph));
     //memcpy the neighbours to the packet
+    int current_pointer = sizeof(ph);
     for(auto neighbour : neighbours)
     {
-        memcpy(&packet2[sizeof(ph)], &neighbour, sizeof(neighbour));
+        memcpy(&packet2[current_pointer], &neighbour.first, sizeof(IPAddress));
+        memcpy(&packet2[current_pointer + sizeof(neighbour.first)], &neighbour.second, sizeof(neighbour.second));
+        current_pointer += sizeof(neighbour);
     }    
     broadcast_packet_to_all_neighbors(packet2);
     //  add delay
